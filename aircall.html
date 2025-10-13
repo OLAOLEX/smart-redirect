@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart App Redirect</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f6f8fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+      color: #333;
+    }
+    button {
+      background: #2A4791;
+      color: white;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    button:hover { background: #488DDB; }
+  </style>
+</head>
+<body>
+  <h2>Opening your app…</h2>
+  <p>If it doesn’t open automatically, tap the button below.</p>
+  <button id="openAppBtn">Open App</button>
+
+  <script>
+    // Customize these URLs for each service
+    const services = {
+      square: {
+        ios: "square-commerce-v1://",
+        android: "intent://squareup.com/dashboard#Intent;scheme=https;package=com.squareup;end",
+        web: "https://squareup.com/dashboard"
+      },
+      aircall: {
+        ios: "aircall://",
+        android: "intent://call#Intent;scheme=aircall;package=com.aircall;end",
+        web: "https://dashboard.aircall.io/"
+      }
+    };
+
+    // Change to either "square" or "aircall"
+    const targetService = "square";
+
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isAndroid = /android/i.test(userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const link = isIOS
+      ? services[targetService].ios
+      : isAndroid
+      ? services[targetService].android
+      : services[targetService].web;
+
+    // Attempt redirect automatically
+    window.onload = () => {
+      setTimeout(() => { window.location.href = link; }, 500);
+    };
+
+    // Manual fallback button
+    document.getElementById("openAppBtn").addEventListener("click", () => {
+      window.location.href = link;
+    });
+  </script>
+</body>
+</html>

@@ -29,12 +29,36 @@
     button:hover {
       background: #488DDB;
     }
+    .hidden {
+      display: none;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #2A4791;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <h2>Opening Square App…</h2>
-  <p>If it doesn’t open automatically, tap below:</p>
-  <button id="openAppBtn">Open in Square</button>
+  <div id="loading">
+    <div class="spinner"></div>
+    <h2>Opening Square App…</h2>
+    <p>If it doesn't open automatically, tap below:</p>
+    <button id="openAppBtn">Open in Square</button>
+  </div>
+  
+  <div id="fallback" class="hidden">
+    <h2>Square App Not Found</h2>
+    <p>It seems the Square app is not installed on your device.</p>
+    <button id="downloadBtn">Download Square App</button>
+  </div>
 
   <script>
     const squareLinks = {
@@ -43,40 +67,61 @@
       web: "https://squareup.com/dashboard"
     };
 
+    const storeUrls = {
+      android: "https://play.google.com/store/apps/details?id=com.squareup",
+      ios: "https://apps.apple.com/app/id335393788"
+    };
+
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isAndroid = /android/i.test(userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
-    const appLink = isIOS
-      ? squareLinks.ios
-      : isAndroid
-      ? squareLinks.android
-      : squareLinks.web;
+    const appLink = isIOS ? squareLinks.ios : isAndroid ? squareLinks.android : squareLinks.web;
+    const storeUrl = isIOS ? storeUrls.ios : storeUrls.android;
 
-    // Try to open the app directly
+    let appOpened = false;
+    
+    // Function to open the app directly
     function openSquareApp() {
-      const now = Date.now();
-      const openUrl = appLink;
-      const storeUrl = isAndroid
-        ? "https://play.google.com/store/apps/details?id=com.squareup"
-        : "https://apps.apple.com/app/id335393788"; // Square POS app ID
-
-      window.location.href = openUrl;
-
-      // If after 1.5 seconds user hasn’t been redirected, assume app not installed
+      if (appOpened) return;
+      
+      // Try to open the app
+      window.location.href = appLink;
+      appOpened = true;
+      
+      // If we're still here after a delay, show fallback
       setTimeout(() => {
-        if (Date.now() - now < 2000) {
-          window.location.href = storeUrl;
+        if (!document.hidden) {
+          showFallback();
         }
-      }, 1500);
+      }, 1000);
     }
-
+    
+    // Show fallback option if app not installed
+    function showFallback() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('fallback').classList.remove('hidden');
+    }
+    
+    // Handle download button click
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      window.location.href = storeUrl;
+    });
+    
+    // Handle open app button click
+    document.getElementById('openAppBtn').addEventListener('click', openSquareApp);
+    
+    // Detect if page becomes hidden (app opened)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        appOpened = true;
+      }
+    });
+    
     // Auto-open after short delay
-    window.onload = () => {
-      setTimeout(openSquareApp, 600);
-    };
-
-    document.getElementById("openAppBtn").addEventListener("click", openSquareApp);
+    window.addEventListener('load', () => {
+      setTimeout(openSquareApp, 500);
+    });
   </script>
 </body>
 </html>

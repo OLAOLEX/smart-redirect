@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart App Redirect</title>
+  <title>Opening Square App...</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
       background: #f6f8fa;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       text-align: center;
       color: #333;
     }
@@ -26,50 +26,57 @@
       cursor: pointer;
       margin-top: 16px;
     }
-    button:hover { background: #488DDB; }
+    button:hover {
+      background: #488DDB;
+    }
   </style>
 </head>
 <body>
-  <h2>Opening your app…</h2>
-  <p>If it doesn’t open automatically, tap the button below.</p>
-  <button id="openAppBtn">Open App</button>
+  <h2>Opening Square App…</h2>
+  <p>If it doesn’t open automatically, tap below:</p>
+  <button id="openAppBtn">Open in Square</button>
 
   <script>
-    // Customize these URLs for each service
-    const services = {
-      square: {
-        ios: "square-commerce-v1://",
-        android: "intent://squareup.com/dashboard#Intent;scheme=https;package=com.squareup;end",
-        web: "https://squareup.com/dashboard"
-      },
-      aircall: {
-        ios: "aircall://",
-        android: "intent://call#Intent;scheme=aircall;package=com.aircall;end",
-        web: "https://dashboard.aircall.io/"
-      }
+    const squareLinks = {
+      ios: "square-commerce-v1://",
+      android: "square-commerce-v1://",
+      web: "https://squareup.com/dashboard"
     };
-
-    // Change to either "square" or "aircall"
-    const targetService = "square";
 
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isAndroid = /android/i.test(userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const link = isIOS
-      ? services[targetService].ios
-      : isAndroid
-      ? services[targetService].android
-      : services[targetService].web;
 
-    // Attempt redirect automatically
+    const appLink = isIOS
+      ? squareLinks.ios
+      : isAndroid
+      ? squareLinks.android
+      : squareLinks.web;
+
+    // Try to open the app directly
+    function openSquareApp() {
+      const now = Date.now();
+      const openUrl = appLink;
+      const storeUrl = isAndroid
+        ? "https://play.google.com/store/apps/details?id=com.squareup"
+        : "https://apps.apple.com/app/id335393788"; // Square POS app ID
+
+      window.location.href = openUrl;
+
+      // If after 1.5 seconds user hasn’t been redirected, assume app not installed
+      setTimeout(() => {
+        if (Date.now() - now < 2000) {
+          window.location.href = storeUrl;
+        }
+      }, 1500);
+    }
+
+    // Auto-open after short delay
     window.onload = () => {
-      setTimeout(() => { window.location.href = link; }, 500);
+      setTimeout(openSquareApp, 600);
     };
 
-    // Manual fallback button
-    document.getElementById("openAppBtn").addEventListener("click", () => {
-      window.location.href = link;
-    });
+    document.getElementById("openAppBtn").addEventListener("click", openSquareApp);
   </script>
 </body>
 </html>

@@ -15,6 +15,8 @@
       height: 100vh;
       text-align: center;
       color: #333;
+      margin: 0;
+      padding: 20px;
     }
     button {
       background: #2A4791;
@@ -44,6 +46,12 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .fallback-options {
+      margin-top: 20px;
+    }
+    .fallback-options button {
+      margin: 5px;
+    }
   </style>
 </head>
 <body>
@@ -56,14 +64,27 @@
   
   <div id="fallback" class="hidden">
     <h2>Square App Not Found</h2>
-    <p>It seems the Square app is not installed on your device.</p>
-    <button id="downloadBtn">Download Square App</button>
+    <p>It seems the Square app is not opening directly.</p>
+    <div class="fallback-options">
+      <button id="tryAlternativeBtn">Try Alternative Method</button>
+      <button id="downloadBtn">Get Square App</button>
+    </div>
   </div>
 
   <script>
     const squareLinks = {
-      ios: "square-commerce-v1://",
-      android: "square-commerce-v1://",
+      // Try multiple URI schemes for Square
+      android: [
+        "square-commerce-v1://",
+        "square://",
+        "com.squareup://",
+        "intent://square-commerce-v1/#Intent;scheme=square-commerce-v1;package=com.squareup;end",
+        "intent://square/#Intent;scheme=square;package=com.squareup;end"
+      ],
+      ios: [
+        "square-commerce-v1://",
+        "square://"
+      ],
       web: "https://squareup.com/dashboard"
     };
 
@@ -76,14 +97,25 @@
     const isAndroid = /android/i.test(userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
-    const appLink = isIOS ? squareLinks.ios : isAndroid ? squareLinks.android : squareLinks.web;
-    const storeUrl = isIOS ? storeUrls.ios : storeUrls.android;
-
+    let currentLinkIndex = 0;
     let appOpened = false;
+    
+    function getCurrentAppLink() {
+      if (isIOS) {
+        return squareLinks.ios[0]; // Use first iOS link
+      } else if (isAndroid) {
+        return squareLinks.android[currentLinkIndex];
+      }
+      return squareLinks.web;
+    }
     
     // Function to open the app directly
     function openSquareApp() {
       if (appOpened) return;
+      
+      const appLink = getCurrentAppLink();
+      
+      console.log("Trying to open with:", appLink);
       
       // Try to open the app
       window.location.href = appLink;
@@ -97,6 +129,32 @@
       }, 1000);
     }
     
+    // Try alternative deep link
+    function tryAlternativeLink() {
+      if (isAndroid && currentLinkIndex < squareLinks.android.length - 1) {
+        currentLinkIndex++;
+        appOpened = false;
+        document.getElementById('fallback').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+        
+        console.log("Trying alternative link:", getCurrentAppLink());
+        
+        setTimeout(() => {
+          window.location.href = getCurrentAppLink();
+          appOpened = true;
+          
+          setTimeout(() => {
+            if (!document.hidden) {
+              showFallback();
+            }
+          }, 1000);
+        }, 500);
+      } else {
+        // No more alternatives, go to store
+        window.location.href = isAndroid ? storeUrls.android : storeUrls.ios;
+      }
+    }
+    
     // Show fallback option if app not installed
     function showFallback() {
       document.getElementById('loading').classList.add('hidden');
@@ -105,8 +163,11 @@
     
     // Handle download button click
     document.getElementById('downloadBtn').addEventListener('click', () => {
-      window.location.href = storeUrl;
+      window.location.href = isAndroid ? storeUrls.android : storeUrls.ios;
     });
+    
+    // Handle alternative method button click
+    document.getElementById('tryAlternativeBtn').addEventListener('click', tryAlternativeLink);
     
     // Handle open app button click
     document.getElementById('openAppBtn').addEventListener('click', openSquareApp);
@@ -116,6 +177,11 @@
       if (document.hidden) {
         appOpened = true;
       }
+    });
+    
+    // Also detect page blur (when app opens)
+    window.addEventListener('blur', () => {
+      appOpened = true;
     });
     
     // Auto-open after short delay
